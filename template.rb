@@ -11,6 +11,9 @@ def add_gems
     gem 'faker'
   end
   gem 'devise'
+
+  # Remove jbuilder
+  gsub_file "Gemfile", /^gem\s+["']jbuilder["'].*$/,''
 end
 
 def add_users
