@@ -1,6 +1,30 @@
 SEED_USER_EMAIL = "user@example.com"
 SEED_USER_PASSWORD = "password"
 
+# This allows us to copy_file from the templates directory
+def source_paths
+  [File.expand_path('templates', __dir__)]
+end
+
+def copy_lint_configs
+  copy_file ".eslintrc.js"
+  copy_file ".erb-lint.yml"
+  copy_file ".prettierrc.json"
+  copy_file ".rubocop.yml"
+end
+
+def setup_postgres
+  template "docker-compose.yml.erb", "docker-compose.yml"
+  copy_file "Dockerfile"
+  template "init.sql.erb", "init.sql"
+  template "config/database.yml.erb", "config/database.yml", force: true
+end
+
+def start_postgres
+  # Start postgres container in background
+  run "docker-compose up -d"
+end
+
 def add_gems
   # Add testing gems
   gem_group :development, :test do
@@ -9,6 +33,7 @@ def add_gems
     gem 'capybara'
     gem 'webdrivers'
     gem 'faker'
+    gem 'rubocop'
   end
   gem 'devise'
 
@@ -53,6 +78,10 @@ initializer 'generators.rb', <<-CODE
 CODE
 
 add_gems
+copy_lint_configs
+
+setup_postgres
+start_postgres
 
 after_bundle do
   generate 'rspec:install'
@@ -70,6 +99,7 @@ after_bundle do
   
   say
   say "Kickoff app successfully created! 👍", :green
+  say "Just a heads up, postgres is running in a Docker container in background mode."
   say
   say "Switch to your app by running:"
   say "$ cd #{app_name}", :yellow
